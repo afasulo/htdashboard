@@ -1,0 +1,4 @@
+venv
+*__
+.DS_Store
+hittrax_local.db
