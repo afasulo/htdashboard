@@ -52,6 +52,11 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
                     WHEN u.FirstName || ' ' || u.LastName = 'Aiden Koester' THEN 2030
                     WHEN u.FirstName || ' ' || u.LastName = 'Aaron Flores' THEN 2030
                     WHEN u.FirstName || ' ' || u.LastName = 'Brody Armstrong' THEN 2030
+                    WHEN u.FirstName || ' ' || u.LastName = 'Adam Jimenez' THEN 2023
+                    WHEN u.FirstName || ' ' || u.LastName = 'Jace Gabaldon' THEN 2028
+                    WHEN u.FirstName || ' ' || u.LastName = 'Radley Philipbar' THEN 2028
+                    WHEN u.FirstName || ' ' || u.LastName = 'Xavier Gonzales' THEN 2028
+                    
                     
                     
                     

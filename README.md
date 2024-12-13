@@ -2,6 +2,17 @@
 
 A comprehensive baseball analytics dashboard built with Python and Dash, designed to visualize and analyze HitTrax data. The dashboard provides detailed player statistics, performance trends, and leaderboards for baseball players.
 
+## Future improvements/fixes
+- fix export to social media button. export to social media should copy the pdf to a sqaure nxn image
+- calculate grad year in a better way. Might be able to automatically calcualte this and update the SQLite DB? may have to update manually
+- fix hittrax analysis tab. when you click on a players name in table, it does not open up summary and dbo.sessions table correctly. It opens it for the wrong athlete. If you click on John Doe, you get Jane Smith, etc.....
+- work on adding a custom image header. Ex. /assets/pdf_header.pdf was my attempt at that but cant get margins or format correct
+- add support for overlaying data and player cards onto a image, aka an pretty background.
+
+
+// link an image in my repo here
+![alt text](https://github.com/afasulo/htdashboard/blob/main/leaderboards_2026%20(1).pdf)
+
 ## Features
 
 - **Player Analytics**
