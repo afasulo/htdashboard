@@ -1,5 +1,7 @@
 import dash
 from dash import html, dcc
+from dash.dependencies import Input, Output, State
+import base64
 from layouts import create_hittrax_filters, create_hittrax_graphs, create_hittrax_analysis_tab
 from callbacks import register_hittrax_callbacks, register_leaderboard_callbacks  # Added import
 from leaderboard_layout import create_leaderboard_layout
@@ -7,9 +9,8 @@ from leaderboard_layout import create_leaderboard_layout
 # Initialize the app with suppress_callback_exceptions=True
 app = dash.Dash(
     __name__,
-    suppress_callback_exceptions=True,
     external_stylesheets=[
-        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
+        'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
     ]
 )
 

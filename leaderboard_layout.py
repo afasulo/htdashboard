@@ -129,6 +129,15 @@ def create_metric_section(metric_title, metric_id):
 
 def create_leaderboard_layout():
     return html.Div([
+        # Font Awesome
+        html.Link(
+            rel='stylesheet',
+            href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css'
+        ),
+        
+        # This needs to be at the root level of the layout
+        dcc.Download(id="export-data"),
+        
         html.H1("Baseball Performance Leaderboards", style={
             'textAlign': 'center',
             'fontSize': '2em',
@@ -137,6 +146,7 @@ def create_leaderboard_layout():
         }),
         
         create_leaderboard_date_filter(),
+        create_export_buttons(),
         
         html.Div([
             create_metric_section("Max Exit Velocity", "max-exit-velocity"),
@@ -149,8 +159,97 @@ def create_leaderboard_layout():
             'gap': '20px',
             'padding': '20px'
         })
-    ], style={
-        'maxWidth': '1800px',
-        'margin': '0 auto',
-        'padding': '20px'
-    })
+    ])
+
+def create_metric_section(metric_title, metric_id):
+    return html.Div([
+        html.H3(metric_title, style={
+            'fontSize': '1.5em',
+            'fontWeight': 'bold',
+            'marginBottom': '20px'
+        }),
+        
+        dcc.Tabs(
+            id=f'grad-year-tabs-{metric_id}',
+            value='2025',  # Set initial value as string
+            children=[
+                dcc.Tab(
+                    label=str(year),  # Convert year to string
+                    value=str(year),  # Convert year to string
+                    style={
+                        'padding': '10px 15px',
+                        'backgroundColor': '#f8f9fa',
+                        'borderBottom': '1px solid #dee2e6'
+                    },
+                    selected_style={
+                        'padding': '10px 15px',
+                        'backgroundColor': 'white',
+                        'borderBottom': '2px solid #2c5282',
+                        'color': '#2c5282',
+                        'fontWeight': 'bold'
+                    }
+                ) for year in range(2025, 2035)
+            ]
+        ),
+        
+        html.Div(
+            id=f'leaderboard-content-{metric_id}',
+            style={'padding': '20px 0'}
+        )
+    ])
+
+    
+def create_export_buttons():
+    return html.Div([
+        html.Div([
+            html.Button([
+                html.I(className="fas fa-file-pdf mr-2"),  # Font Awesome PDF icon
+                "Export PDF"
+            ], id="export-pdf-button", className="export-button", 
+            style={
+                'backgroundColor': '#2c5282',  # Matching your existing blue theme
+                'color': 'white',
+                'padding': '10px 20px',
+                'border': 'none',
+                'borderRadius': '5px',
+                'marginRight': '10px',
+                'cursor': 'pointer',
+                'fontWeight': 'bold',
+                'display': 'flex',
+                'alignItems': 'center',
+                'justifyContent': 'center',
+            }),
+            
+            html.Button([
+                html.I(className="fab fa-instagram mr-2"),  # Font Awesome Instagram icon
+                "Export for Instagram"
+            ], id="export-social-button", className="export-button",
+            style={
+                'backgroundColor': '#E1306C',  # Instagram-like color
+                'color': 'white',
+                'padding': '10px 20px',
+                'border': 'none',
+                'borderRadius': '5px',
+                'cursor': 'pointer',
+                'fontWeight': 'bold',
+                'display': 'flex',
+                'alignItems': 'center',
+                'justifyContent': 'center',
+            }),
+            
+            html.Div(id="export-status", style={
+                'marginLeft': '10px',
+                'display': 'flex',
+                'alignItems': 'center',
+                'color': '#666'
+            })
+        ], style={
+            'display': 'flex',
+            'alignItems': 'center',
+            'backgroundColor': 'white',
+            'padding': '20px',
+            'borderRadius': '5px',
+            'boxShadow': '0 2px 4px rgba(0,0,0,0.1)',
+            'marginBottom': '20px'
+        })
+    ])

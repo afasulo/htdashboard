@@ -1,12 +1,17 @@
+from dash import html, dcc, callback_context
+import dash
 from dash.dependencies import Input, Output, State
+import base64
+from io import BytesIO
 import plotly.express as px
 import plotly.graph_objects as go
-from dash import html, callback_context, dash_table
+from dash import dash_table
 import pandas as pd
 from sqlite_utils import get_hittrax_data, calculate_player_stats, get_player_details
 from utils import COLUMN_FORMATS, COLUMN_GROUPS
-from leaderboard_utils import get_leaderboard_data  # Add this import
-from leaderboard_layout import create_player_card  # Add this import
+from leaderboard_utils import get_leaderboard_data
+from leaderboard_layout import create_player_card
+from export_utils import create_leaderboard_pdf, create_social_media_image
 
 
 def register_hittrax_callbacks(app):
@@ -245,7 +250,6 @@ def register_hittrax_callbacks(app):
 
     return app
 
-# In callbacks.py
 def register_leaderboard_callbacks(app):
     @app.callback(
         [Output(f'leaderboard-content-max-exit-velocity', 'children'),
@@ -295,10 +299,74 @@ def register_leaderboard_callbacks(app):
         except Exception as e:
             print(f"Error updating leaderboard content: {str(e)}")
             return [html.Div(f"Error loading leaderboard data: {str(e)}")] * 4
-    
-    return app
 
-    # Add callback to ensure tab values stay in sync when needed
+    @app.callback(
+    [Output('export-status', 'children'),
+     Output('export-data', 'data')],
+    [Input('export-pdf-button', 'n_clicks'),
+     Input('export-social-button', 'n_clicks')],
+    [State('grad-year-tabs-max-exit-velocity', 'value'),
+     State('leaderboard-date-filter', 'start_date'),
+     State('leaderboard-date-filter', 'end_date')]  # Add date range states
+)
+    def handle_exports(pdf_clicks, social_clicks, grad_year, start_date, end_date):
+        if not callback_context.triggered:
+            return '', None
+                
+        trigger_id = callback_context.triggered[0]['prop_id'].split('.')[0]
+        print(f"Export triggered: {trigger_id}")  # Debug print
+        
+        try:
+            # Get leaderboard data with date range
+            data = get_leaderboard_data(start_date, end_date)
+            print("Leaderboard data structure:", data)  # Debug print
+            
+            if not data:
+                print("No leaderboard data available")  # Debug print
+                return "No data available for export", None
+                    
+            # Convert grad_year to int, handling string input
+            grad_year = int(grad_year) if grad_year else 2025
+            print(f"Grad year: {grad_year}")  # Debug print
+                
+            if trigger_id == 'export-pdf-button' and pdf_clicks:
+                print("Generating PDF...")  # Debug print
+                # Pass date range to PDF generation
+                pdf_buffer = create_leaderboard_pdf(grad_year, data, start_date, end_date)
+                
+                # Convert to base64 for download
+                pdf_base64 = base64.b64encode(pdf_buffer.getvalue()).decode('utf-8')
+                
+                return "PDF generated successfully", {
+                    'content': pdf_base64,
+                    'filename': f'leaderboards_{grad_year}.pdf',
+                    'type': 'application/pdf',
+                    'base64': True
+                }
+                    
+            elif trigger_id == 'export-social-button' and social_clicks:
+                print("Generating social media image...")  # Debug print
+                # Pass date range to image generation
+                img_buffer = create_social_media_image(grad_year, data, start_date, end_date)
+                
+                # Convert to base64 for download
+                img_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
+                
+                return "Image generated successfully", {
+                    'content': img_base64,
+                    'filename': f'leaderboards_{grad_year}.png',
+                    'type': 'image/png',
+                    'base64': True
+                }
+                    
+        except Exception as e:
+            print(f"Error during export: {str(e)}")  # Debug print
+            import traceback
+            traceback.print_exc()  # Print full error traceback
+            return f"Error during export: {str(e)}", None
+                
+        return '', None
+
     @app.callback(
         [Output('grad-year-tabs-max-exit-velocity', 'value'),
          Output('grad-year-tabs-average-exit-velocity', 'value'),
@@ -312,17 +380,12 @@ def register_leaderboard_callbacks(app):
     def sync_grad_years(max_exit_year, avg_exit_year, max_dist_year, avg_dist_year):
         ctx = callback_context
         if not ctx.triggered:
-            return 2025, 2025, 2025, 2025
+            return '2025', '2025', '2025', '2025'
             
-        # Get the input that triggered the callback
-        input_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        value = ctx.triggered[0]['value']
-        
-        # If "sync years" option is enabled, you could return the same value for all
-        # For now, we'll just return each tab's own value
-        return (max_exit_year or 2025, 
-                avg_exit_year or 2025, 
-                max_dist_year or 2025, 
-                avg_dist_year or 2025)
-    
+        # Return string values for all years
+        return (str(max_exit_year or '2025'), 
+                str(avg_exit_year or '2025'), 
+                str(max_dist_year or '2025'), 
+                str(avg_dist_year or '2025'))
+
     return app

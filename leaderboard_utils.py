@@ -1,7 +1,7 @@
 from sqlite_utils import get_db_connection
 import pandas as pd
 
-def get_leaderboard_data(start_date=None, end_date=None, min_ab=25):
+def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
     """Get leaderboard data for each metric by graduation year"""
     try:
         conn = get_db_connection()
@@ -16,6 +16,45 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=25):
                     -- Special cases first
                     WHEN u.FirstName || ' ' || u.LastName = 'Colton Floyd' THEN 2027
                     WHEN u.FirstName || ' ' || u.LastName = 'Maddox Gonzales' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Kaiden Nerhood' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Wyatt Tinker' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Dean Ellison' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Aiden Mobley' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Everett Burdett' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Luke Feist' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Chase Qualler' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Edward Blanshine' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Damon Saavedra' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Abram Pine' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Noah Segura' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Hunter Easton' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Chris Moya' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Nathaniel Jaramillo' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Mark Scime' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Deegan Goldberg' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Ty Rector' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Avery Dearholt' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Chris Moya' THEN 2026
+                    WHEN u.FirstName || ' ' || u.LastName = 'Landyn Cottone' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Caiden House' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Tas Lupo' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Logan Sunstrom' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Brayden Bustillos' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Chase Rivera' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Matthew Cook' THEN 2027
+                    WHEN u.FirstName || ' ' || u.LastName = 'Richie Reiffenberger' THEN 2028
+                    WHEN u.FirstName || ' ' || u.LastName = 'Brayden Palmerton' THEN 2028
+                    WHEN u.FirstName || ' ' || u.LastName = 'Drew Jones' THEN 2029
+                    WHEN u.FirstName || ' ' || u.LastName = 'James Tabbert' THEN 2029
+                    WHEN u.FirstName || ' ' || u.LastName = 'Gavin Eaton' THEN 2029
+                    WHEN u.FirstName || ' ' || u.LastName = 'Tyler Worthen' THEN 2029
+                    WHEN u.FirstName || ' ' || u.LastName = 'Calin Rivera' THEN 2029
+                    WHEN u.FirstName || ' ' || u.LastName = 'Aiden Koester' THEN 2030
+                    WHEN u.FirstName || ' ' || u.LastName = 'Aaron Flores' THEN 2030
+                    WHEN u.FirstName || ' ' || u.LastName = 'Brody Armstrong' THEN 2030
+                    
+                    
+                    
                     -- Default calculation
                     WHEN strftime('%m', u.BirthDate) >= '09' 
                     THEN cast(strftime('%Y', u.BirthDate) as integer) + 18 
