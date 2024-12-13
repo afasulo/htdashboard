@@ -10,8 +10,25 @@ A comprehensive baseball analytics dashboard built with Python and Dash, designe
 - add support for overlaying data and player cards onto a image, aka an pretty background.
 
 
-// link an image in my repo here
-![alt text](https://github.com/afasulo/htdashboard/blob/main/leaderboards_2026%20(1).pdf)
+# Dev Notes for adam
+### decode Users.SkilllLevel
+- 0 => 12u 
+- 1 => 15u
+- 2 => High School
+- 3 => College
+- 4 => Professional
+- 5 => 13u
+- 6 => 10u
+- 7 =>  8u
+
+Pretty intuitive right?...
+
+### decode Users.active (active/archived)
+- 1 => active 
+- 0 => archived
+
+I would like to test/discover if deleting users from users table would break anything. I guess theey would be left with dangling rows in the sessions and plays table. No valid userID to reference back to. Need to think about a safe user delete util someday
+
 
 ## Features
 

@@ -1,6 +1,7 @@
 from sqlite_utils import get_db_connection
 import pandas as pd
 
+
 def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
     """Get leaderboard data for each metric by graduation year"""
     try:
@@ -14,6 +15,7 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
                 u.BirthDate,
                 CASE 
                     -- Special cases first
+                    WHEN u.FirstName || ' ' || u.LastName = 'Colton Floyd' THEN 2027
                     WHEN u.FirstName || ' ' || u.LastName = 'Colton Floyd' THEN 2027
                     WHEN u.FirstName || ' ' || u.LastName = 'Maddox Gonzales' THEN 2027
                     WHEN u.FirstName || ' ' || u.LastName = 'Kaiden Nerhood' THEN 2026
@@ -56,30 +58,38 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
                     WHEN u.FirstName || ' ' || u.LastName = 'Jace Gabaldon' THEN 2028
                     WHEN u.FirstName || ' ' || u.LastName = 'Radley Philipbar' THEN 2028
                     WHEN u.FirstName || ' ' || u.LastName = 'Xavier Gonzales' THEN 2028
-                    
-                    
-                    
-                    
                     -- Default calculation
                     WHEN strftime('%m', u.BirthDate) >= '09' 
                     THEN cast(strftime('%Y', u.BirthDate) as integer) + 18 
                     ELSE cast(strftime('%Y', u.BirthDate) as integer) + 17 
                 END as GradYear,
-                MAX(s.MaxExitVel) as MaxExitVelo,
-                AVG(s.AvgExitVel) as AvgExitVelo,
-                MAX(s.MaxDistance) as MaxDistance,
-                AVG(s.AvgDistance) as AvgDistance,
+                MAX(s.MaxExitVelMph) as MaxExitVelo,
+                AVG(s.AvgExitVelMph) as AvgExitVelo,
+                MAX(s.MaxDistanceFeet) as MaxDistance,
+                AVG(s.AvgDistanceFeet) as AvgDistance,
                 SUM(s.AB) as TotalAB,
                 AVG(s.AVG) as BattingAvg,
                 AVG(s.SLG) as SlugPct,
                 SUM(s.HomeRuns) as HomeRuns
-            FROM Users u
-            JOIN Session s ON u.Id = s.UserId
+            FROM UsersConverted u
+            JOIN SessionConverted s ON u.Id = s.UserId
             WHERE s.TimeStamp BETWEEN COALESCE(?, date('now', '-1 year')) AND COALESCE(?, date('now'))
+                AND s.Active = 1  -- Add active filter if needed
             GROUP BY u.FirstName, u.LastName, u.School, u.BirthDate
             HAVING SUM(s.AB) >= ?
         )
-        SELECT *,
+        SELECT 
+            Name,
+            School,
+            GradYear,
+            MaxExitVelo,
+            AvgExitVelo,
+            MaxDistance,
+            AvgDistance,
+            TotalAB,
+            BattingAvg,
+            SlugPct,
+            HomeRuns,
             ROW_NUMBER() OVER (PARTITION BY GradYear ORDER BY MaxExitVelo DESC) as MaxExitVeloRank,
             ROW_NUMBER() OVER (PARTITION BY GradYear ORDER BY AvgExitVelo DESC) as AvgExitVeloRank,
             ROW_NUMBER() OVER (PARTITION BY GradYear ORDER BY MaxDistance DESC) as MaxDistanceRank,

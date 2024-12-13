@@ -1,4 +1,5 @@
 import pandas as pd
+import sqlite3
 from config import HITTRAX_CONFIG
 
 def convert_units(df: pd.DataFrame) -> pd.DataFrame:
@@ -31,9 +32,21 @@ def convert_units(df: pd.DataFrame) -> pd.DataFrame:
     
     return df
 
+def convert_units_before_save(df: pd.DataFrame) -> pd.DataFrame:
+    """Keep data in metric - no conversion needed as source is already metric"""
+    return df
+
 def log_sync_event(cursor, table_name: str, rows_synced: int, status: str, message: str = None):
     """Log synchronization event"""
     cursor.execute('''
         INSERT INTO SyncLog (TableName, LastSyncTime, RowsSynced, Status, Message)
         VALUES (?, CURRENT_TIMESTAMP, ?, ?, ?)
     ''', (table_name, rows_synced, status, message))
+
+def get_converted_data(table_name: str, conn: sqlite3.Connection, where_clause: str = None) -> pd.DataFrame:
+    """Get data from the converted views instead of raw tables"""
+    view_name = f"{table_name}Converted"
+    query = f"SELECT * FROM {view_name}"
+    if where_clause:
+        query += f" WHERE {where_clause}"
+    return pd.read_sql(query, conn)

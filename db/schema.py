@@ -1,3 +1,4 @@
+# schema.py
 import sqlite3
 from datetime import datetime
 
@@ -8,7 +9,7 @@ def create_sqlite_schema():
     cursor = conn.cursor()
     
     try:
-        # Create Users table
+        # First create your existing tables
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS Users (
             Id INTEGER PRIMARY KEY,
@@ -32,12 +33,11 @@ def create_sqlite_schema():
             School TEXT NOT NULL,
             HomeTown TEXT NOT NULL,
             GraduationYear INTEGER NOT NULL,
-            Gender INTEGER NOT NULL,
-            LastSynced TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            Gender INTEGER NOT NULL
         )
         ''')
 
-        # Create Session table
+        # Create Session table (your existing code)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS Session (
             Id INTEGER PRIMARY KEY,
@@ -93,12 +93,11 @@ def create_sqlite_schema():
             RankMaxDist REAL NOT NULL,
             RankPoints REAL NOT NULL,
             BatMaterial INTEGER NOT NULL,
-            LastSynced TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (UserId) REFERENCES Users(Id)
         )
         ''')
         
-        # Create Plays table
+        # Create Plays table (your existing code)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS Plays (
             Id INTEGER PRIMARY KEY,
@@ -146,42 +145,130 @@ def create_sqlite_schema():
             HorizontalAngle REAL NOT NULL,
             ExitVelo REAL NOT NULL,
             Points INTEGER NOT NULL,
-            LastSynced TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (SessionId) REFERENCES Session(Id)
         )
         ''')
-        
-        # Create indices for Users table
+
+        # Create the conversion views
+        cursor.execute('''
+        CREATE VIEW IF NOT EXISTS UsersConverted AS
+        SELECT 
+            Id,
+            UnitId,
+            FirstName,
+            LastName,
+            UserName,
+            Password,
+            Created,
+            Email,
+            Stadium,
+            SkillLevel,
+            CAST(ROUND(Height * 3.28084, 1) AS REAL) as HeightFeet,
+            CAST(ROUND(Weight * 2.20462) AS INTEGER) as WeightLbs,
+            Active,
+            Position,
+            Bats,
+            Throws,
+            School,
+            HomeTown,
+            GraduationYear,
+            Gender,
+            BirthDate
+        FROM Users
+        ''')
+
+        cursor.execute('''
+    CREATE VIEW IF NOT EXISTS SessionConverted AS
+    SELECT 
+        Id,
+        UnitId,
+        UserId,
+        UserUnitId,
+        TimeStamp,
+        Stadium,
+        Type,
+        SkillLevel,
+        CAST(ROUND(MaxPitchVel * 2.23694, 1) AS REAL) as MaxPitchVelMph,
+        CAST(ROUND(MaxExitVel * 2.23694, 1) AS REAL) as MaxExitVelMph,
+        CAST(ROUND(AvgPitchVel * 2.23694, 1) AS REAL) as AvgPitchVelMph,
+        CAST(ROUND(AvgExitVel * 2.23694, 1) AS REAL) as AvgExitVelMph,
+        CAST(ROUND(HHVel * 2.23694, 1) AS REAL) as HHVelMph,
+        CAST(ROUND(AvgDistance * 3.28084) AS INTEGER) as AvgDistanceFeet,
+        CAST(ROUND(MaxDistance * 3.28084) AS INTEGER) as MaxDistanceFeet,
+        CAST(ROUND(MaxGroundDist * 3.28084) AS INTEGER) as MaxGroundDistFeet,
+        CAST(ROUND(AvgGroundDist * 3.28084) AS INTEGER) as AvgGroundDistFeet,
+        PitchCount,
+        HitCount,
+        Singles,
+        Doubles,
+        Triples,
+        HomeRuns,
+        FoulBalls,
+        Strikes,
+        Balls,
+        AVG,
+        SLG,
+        LDPercentage,
+        FBPercentage,
+        GBPercentage,
+        LIPercentage,
+        ROPercentage,
+        COPercentage,
+        StrikeZoneBottom,
+        StrikeZoneTop,
+        HHCount,
+        Active,
+        StrikeZoneWidth,
+        Score,
+        MaxPoints,
+        AB,
+        Video,
+        RankMaxVel,
+        RankAvgVel,
+        RankMaxDist,
+        RankPoints,
+        BatMaterial
+    FROM Session
+    ''')
+        cursor.execute('''
+        CREATE VIEW IF NOT EXISTS PlaysConverted AS
+        SELECT 
+            Id,
+            SessionId,
+            TimeStamp,
+            CAST(ROUND(ExitBallVel1 * 2.23694, 1) AS REAL) as ExitBallVel1Mph,
+            CAST(ROUND(ExitBallVel2 * 2.23694, 1) AS REAL) as ExitBallVel2Mph,
+            CAST(ROUND(ExitBallVel3 * 2.23694, 1) AS REAL) as ExitBallVel3Mph,
+            CAST(ROUND(PitchVel * 2.23694, 1) AS REAL) as PitchVelMph,
+            CAST(ROUND(ExitVelo * 2.23694, 1) AS REAL) as ExitVeloMph,
+            CAST(ROUND(Distance * 3.28084) AS INTEGER) as DistanceFeet,
+            CAST(ROUND(GroundDist * 3.28084) AS INTEGER) as GroundDistFeet,
+            Result,
+            Type,
+            Fielder,
+            Quadrant,
+            PitchType,
+            Elevation,
+            Active,
+            Points
+        FROM Plays
+        ''')
+
+        # Create your existing indices
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_active ON Users(Active)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_users_skilllevel ON Users(SkillLevel)')
-        
-        # Create indices for Session table
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_session_userid ON Session(UserId)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_session_timestamp ON Session(TimeStamp)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_session_skilllevel ON Session(SkillLevel)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_session_active ON Session(Active)')
-        
-        # Create indices for Plays table
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_plays_sessionid ON Plays(SessionId)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_plays_timestamp ON Plays(TimeStamp)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_plays_exitvelo ON Plays(ExitVelo)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_plays_distance ON Plays(Distance)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_plays_active ON Plays(Active)')
-        
-        # Create sync tracking table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS SyncLog (
-            Id INTEGER PRIMARY KEY AUTOINCREMENT,
-            TableName TEXT NOT NULL,
-            LastSyncTime TIMESTAMP NOT NULL,
-            RowsSynced INTEGER NOT NULL,
-            Status TEXT NOT NULL,
-            Message TEXT
-        )
-        ''')
-        
+
         conn.commit()
-        print("Successfully created SQLite schema")
+        print("Successfully created SQLite schema with conversion views")
         
     except Exception as e:
         print(f"Error creating schema: {str(e)}")

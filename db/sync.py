@@ -4,7 +4,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
 from config import HITTRAX_CONFIG
-from sync_utils import convert_units, log_sync_event
+from sync_utils import convert_units_before_save, log_sync_event
 
 def sync_users(verbose=True):
     """Sync ALL Users from HitTrax to SQLite"""
@@ -15,13 +15,12 @@ def sync_users(verbose=True):
     sqlite_conn = sqlite3.connect(HITTRAX_CONFIG['sqlite_db'])
     
     try:
-        # Get ALL users data
         query = """
         SELECT 
             Id, UnitId, FirstName, LastName, UserName, Password,
             Created, Email, Stadium, SkillLevel, GameType, Height,
             Role, Active, Weight, Position, Bats, Throws,
-            School, HomeTown, GraduationYear, Gender, BirthDate  -- Added BirthDate
+            School, HomeTown, GraduationYear, Gender, BirthDate
         FROM Users
         """
         
@@ -29,9 +28,7 @@ def sync_users(verbose=True):
             print("Fetching all users from source database...")
         
         df = pd.read_sql(query, source_conn)
-        
-        if verbose:
-            print(f"Found {len(df)} users in source database")
+        # Data comes in metric, no need to convert
         
         df.to_sql('Users', sqlite_conn, if_exists='replace', index=False)
         
@@ -58,7 +55,6 @@ def sync_sessions(days_back=None, verbose=True):
     sqlite_conn = sqlite3.connect(HITTRAX_CONFIG['sqlite_db'])
     
     try:
-        # Build query for all or recent sessions
         base_query = """
         SELECT 
             Id, UnitId, UserId, UserUnitId, TimeStamp, Stadium, Type,
@@ -84,18 +80,8 @@ def sync_sessions(days_back=None, verbose=True):
             print("Fetching sessions from source database...")
             
         df = pd.read_sql(base_query, source_conn, params=params)
+        # Data comes in metric, no need to convert
         
-        if verbose:
-            print(f"Found {len(df)} sessions in source database")
-            
-        if verbose:
-            print("Converting units...")
-            
-        df = convert_units(df)
-        
-        if verbose:
-            print("Writing sessions to local database...")
-            
         df.to_sql('Session', sqlite_conn, if_exists='replace', index=False)
         
         if verbose:
@@ -121,7 +107,6 @@ def sync_plays(days_back=None, verbose=True):
     sqlite_conn = sqlite3.connect(HITTRAX_CONFIG['sqlite_db'])
     
     try:
-        # Build query for all or recent plays
         base_query = """
         SELECT 
             Id, SessionId, TimeStamp, ExitBallVel1, ExitBallVel2,
@@ -146,18 +131,8 @@ def sync_plays(days_back=None, verbose=True):
             print("Fetching plays from source database...")
             
         df = pd.read_sql(base_query, source_conn, params=params)
+        # Data comes in metric, no need to convert
         
-        if verbose:
-            print(f"Found {len(df)} plays in source database")
-            
-        if verbose:
-            print("Converting units...")
-            
-        df = convert_units(df)
-        
-        if verbose:
-            print("Writing plays to local database...")
-            
         df.to_sql('Plays', sqlite_conn, if_exists='replace', index=False)
         
         if verbose:

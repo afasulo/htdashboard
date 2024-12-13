@@ -16,9 +16,11 @@ def get_hittrax_data():
             s.*,
             u.FirstName,
             u.LastName,
-            u.FirstName || ' ' || u.LastName as Name
-        FROM Session s
-        LEFT JOIN Users u ON s.UserId = u.Id
+            u.FirstName || ' ' || u.LastName as Name,
+            u.HeightFeet as Height,  -- Get converted height
+            u.WeightLbs as Weight    -- Get converted weight
+        FROM SessionConverted s  -- Use converted view
+        LEFT JOIN UsersConverted u ON s.UserId = u.Id  -- Use converted view
         WHERE s.SkillLevel IS NOT NULL
         ORDER BY s.TimeStamp DESC
         """
@@ -37,9 +39,9 @@ def calculate_player_stats(df, min_ab=10):
     try:
         stats = df.groupby(['Name', 'SkillLevel']).agg({
             'AB': 'sum',
-            'MaxExitVel': 'max',
-            'AvgExitVel': 'mean',
-            'MaxDistance': 'max',
+            'MaxExitVelMph': 'max',        # Using converted columns
+            'AvgExitVelMph': 'mean',       # Using converted columns
+            'MaxDistanceFeet': 'max',      # Using converted columns
             'AVG': 'mean',
             'SLG': 'mean',
             'HomeRuns': 'sum',
@@ -63,11 +65,12 @@ def get_player_details(player_name):
         query = """
         SELECT 
             s.*,
-            u.FirstName,
-            u.LastName,
-            u.FirstName || ' ' || u.LastName as Name
-        FROM Session s
-        LEFT JOIN Users u ON s.UserId = u.Id
+            u.FirstName || ' ' || u.LastName as Name,
+            u.School,
+            u.HeightFeet as Height,    -- Get converted height
+            u.WeightLbs as Weight      -- Get converted weight
+        FROM SessionConverted s        -- Use converted view
+        LEFT JOIN UsersConverted u ON s.UserId = u.Id  -- Use converted view
         WHERE u.FirstName || ' ' || u.LastName = ?
         ORDER BY s.TimeStamp DESC
         """

@@ -57,6 +57,48 @@ def register_hittrax_callbacks(app):
                                for skill in sorted(df['SkillLevel'].unique()) if pd.notna(skill)]
                 return [], [], [], empty_fig, empty_fig, empty_fig, player_options, skill_options
 
+            # Create scatter plot using the correct column names
+            scatter_fig = px.scatter(
+                display_data, 
+                x='AvgExitVelMph',  # Updated column name 
+                y='MaxDistanceFeet',  # Updated column name
+                color='SkillLevel',
+                size='AB',
+                hover_data=['Name', 'AVG', 'SLG', 'HomeRuns', 'AB', 'HitCount'],
+                text='Name',
+                title='Exit Velocity vs Distance by Skill Level'
+            )
+            scatter_fig.update_traces(textposition='top center')
+            
+            # Create radar chart with the correct column names
+            radar_fig = go.Figure()
+            top_players = display_data.nlargest(5, 'AvgExitVelMph')  # Updated column name
+            
+            for _, player in top_players.iterrows():
+                radar_fig.add_trace(go.Scatterpolar(
+                    r=[player['AVG'], player['SLG'], 
+                       player['AvgExitVelMph']/100,  # Updated column name 
+                       player['MaxDistanceFeet']/400,  # Updated column name
+                       player['HomeRuns']/10],
+                    theta=['AVG', 'SLG', 'Exit Velo', 'Distance', 'HR'],
+                    name=f"{player['Name']}"
+                ))
+            
+            radar_fig.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                showlegend=True,
+                title='Top 5 Players by Exit Velocity'
+            )
+            
+            # Create box plot with the correct column name
+            velo_box = px.box(
+                display_data,
+                x='SkillLevel',
+                y='MaxExitVelMph',  # Updated column name
+                points='all',
+                title='Exit Velocity Distribution'
+            )
+            
             # Format columns and create tooltips for the table
             if not selected_columns:
                 selected_columns = [col for group in COLUMN_GROUPS.values() for col in group]
@@ -75,48 +117,6 @@ def register_hittrax_callbacks(app):
                 {'name': col, 'id': col, 'deletable': True, 'selectable': True}
                 for col in selected_columns if col in display_data.columns
             ]
-
-            # Create scatter plot
-            scatter_fig = px.scatter(
-                display_data, 
-                x='AvgExitVel', 
-                y='MaxDistance',
-                color='SkillLevel',
-                size='AB',
-                hover_data=['Name', 'AVG', 'SLG', 'HomeRuns', 'AB', 'HitCount'],
-                text='Name',
-                title='Exit Velocity vs Distance by Skill Level'
-            )
-            scatter_fig.update_traces(textposition='top center')
-            
-            # Create radar chart
-            radar_fig = go.Figure()
-            top_players = display_data.nlargest(5, 'AvgExitVel')
-            
-            for _, player in top_players.iterrows():
-                radar_fig.add_trace(go.Scatterpolar(
-                    r=[player['AVG'], player['SLG'], 
-                       player['AvgExitVel']/100, 
-                       player['MaxDistance']/400,
-                       player['HomeRuns']/10],
-                    theta=['AVG', 'SLG', 'Exit Velo', 'Distance', 'HR'],
-                    name=f"{player['Name']}"
-                ))
-            
-            radar_fig.update_layout(
-                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
-                showlegend=True,
-                title='Top 5 Players by Exit Velocity'
-            )
-            
-            # Create box plot
-            velo_box = px.box(
-                display_data,
-                x='SkillLevel',
-                y='MaxExitVel',
-                points='all',
-                title='Exit Velocity Distribution'
-            )
             
             # Update filter options
             player_options = [{'label': name, 'value': name}
@@ -139,115 +139,6 @@ def register_hittrax_callbacks(app):
             print(f"Error updating data: {str(e)}")
             empty_fig = px.scatter(title=f"Error: {str(e)}")
             return [], [], [], empty_fig, empty_fig, empty_fig, [], []
-
-    @app.callback(
-        [Output('summary-view', 'style'),
-        Output('session-details-view', 'style'),
-        Output('player-name-header', 'children'),
-        Output('session-trend-graph', 'figure'),
-        Output('session-heatmap', 'figure'),
-        Output('session-metrics-chart', 'figure'),
-        Output('session-details-table', 'data'),  # Changed from detailed-session-table
-        Output('session-details-table', 'columns')],  # Changed from detailed-session-table
-        [Input('hittrax-summary-table', 'active_cell'),
-        Input('return-to-summary', 'n_clicks'),
-        Input('session-date-filter', 'start_date'),
-        Input('session-date-filter', 'end_date'),
-        Input('session-stats-filter', 'value')]
-    )
-    def update_session_details(active_cell, return_clicks, start_date, end_date, selected_stats):
-        ctx = callback_context
-        if not ctx.triggered:
-            return {'display': 'block'}, {'display': 'none'}, '', {}, {}, {}, [], []
-
-        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        
-        if trigger_id == 'return-to-summary':
-            return {'display': 'block'}, {'display': 'none'}, '', {}, {}, {}, [], []
-        
-        if not active_cell:
-            return {'display': 'block'}, {'display': 'none'}, '', {}, {}, {}, [], []
-            
-        try:
-            # Get player data
-            df = get_hittrax_data()
-            player_name = df.iloc[active_cell['row']]['Name']
-            player_data = get_player_details(player_name)
-            
-            # Apply date filters if selected
-            if start_date and end_date:
-                player_data = player_data[
-                    (player_data['TimeStamp'] >= start_date) & 
-                    (player_data['TimeStamp'] <= end_date)
-                ]
-            
-            # Create trend graph
-            trend_fig = px.line(
-                player_data, 
-                x='TimeStamp', 
-                y=['AvgExitVel', 'MaxExitVel'],
-                title='Exit Velocity Trends'
-            )
-            
-            # Create heatmap
-            heatmap_fig = px.density_heatmap(
-                player_data,
-                x='AvgExitVel',
-                y='MaxDistance',
-                title='Hit Distribution'
-            )
-            
-            # Create metrics chart
-            metrics_fig = px.line(
-                player_data,
-                x='TimeStamp',
-                y=['AVG', 'SLG'],
-                title='Batting Metrics Over Time'
-            )
-            
-            # Create columns for detailed table
-            columns = [
-                {'name': 'TimeStamp', 'id': 'TimeStamp'},
-                {'name': 'Name', 'id': 'Name'},
-                {'name': 'MaxExitVel', 'id': 'MaxExitVel'},
-                {'name': 'AvgExitVel', 'id': 'AvgExitVel'},
-                {'name': 'MaxDistance', 'id': 'MaxDistance'},
-                {'name': 'AvgDistance', 'id': 'AvgDistance'},
-                {'name': 'AB', 'id': 'AB'},
-                {'name': 'Hits', 'id': 'HitCount'},
-                {'name': 'AVG', 'id': 'AVG'},
-                {'name': 'SLG', 'id': 'SLG'},
-                {'name': 'HomeRuns', 'id': 'HomeRuns'},
-                {'name': 'Singles', 'id': 'Singles'},
-                {'name': 'Doubles', 'id': 'Doubles'},
-                {'name': 'Triples', 'id': 'Triples'},
-                {'name': 'FoulBalls', 'id': 'FoulBalls'},
-                {'name': 'Strikes', 'id': 'Strikes'},
-                {'name': 'Balls', 'id': 'Balls'},
-                {'name': 'LDPercentage', 'id': 'LDPercentage'},
-                {'name': 'FBPercentage', 'id': 'FBPercentage'},
-                {'name': 'HHVel', 'id': 'HHVel'},
-                {'name': 'LOPercentage', 'id': 'LOPercentage'},
-                {'name': 'MaxPoints', 'id': 'MaxPoints'},
-                {'name': 'Score', 'id': 'Score'}
-                # Add other columns as needed
-            ]
-            
-            return (
-                {'display': 'none'},  # Hide summary
-                {'display': 'block'},  # Show details
-                f"Session Details - {player_name}",
-                trend_fig,
-                heatmap_fig,
-                metrics_fig,
-                player_data.to_dict('records'),
-                columns
-            )
-            
-        except Exception as e:
-            print(f"Error updating session details: {str(e)}")
-            return {'display': 'block'}, {'display': 'none'}, '', {}, {}, {}, [], []
-
     return app
 
 def register_leaderboard_callbacks(app):
