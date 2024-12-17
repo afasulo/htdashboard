@@ -1,11 +1,18 @@
-from sqlite_utils import get_db_connection
+import sqlite3
 import pandas as pd
+from config import HITTRAX_CONFIG
 
+def get_db_connection():
+    """Create a connection to the SQLite database"""
+    return sqlite3.connect(HITTRAX_CONFIG['sqlite_db'])
 
 def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
     """Get leaderboard data for each metric by graduation year"""
     try:
         conn = get_db_connection()
+        
+        # Debug print to verify connection
+        print("Database connection established")
         
         query = """
         WITH PlayerStats AS (
@@ -14,8 +21,7 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
                 u.School,
                 u.BirthDate,
                 CASE 
-                    -- Special cases first
-                    WHEN u.FirstName || ' ' || u.LastName = 'Colton Floyd' THEN 2027
+                    WHEN u.GraduationYear IS NOT NULL AND u.GraduationYear != 1 THEN u.GraduationYear
                     WHEN u.FirstName || ' ' || u.LastName = 'Colton Floyd' THEN 2027
                     WHEN u.FirstName || ' ' || u.LastName = 'Maddox Gonzales' THEN 2027
                     WHEN u.FirstName || ' ' || u.LastName = 'Kaiden Nerhood' THEN 2026
@@ -58,7 +64,6 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
                     WHEN u.FirstName || ' ' || u.LastName = 'Jace Gabaldon' THEN 2028
                     WHEN u.FirstName || ' ' || u.LastName = 'Radley Philipbar' THEN 2028
                     WHEN u.FirstName || ' ' || u.LastName = 'Xavier Gonzales' THEN 2028
-                    -- Default calculation
                     WHEN strftime('%m', u.BirthDate) >= '09' 
                     THEN cast(strftime('%Y', u.BirthDate) as integer) + 18 
                     ELSE cast(strftime('%Y', u.BirthDate) as integer) + 17 
@@ -74,8 +79,8 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
             FROM UsersConverted u
             JOIN SessionConverted s ON u.Id = s.UserId
             WHERE s.TimeStamp BETWEEN COALESCE(?, date('now', '-1 year')) AND COALESCE(?, date('now'))
-                AND s.Active = 1  -- Add active filter if needed
-            GROUP BY u.FirstName, u.LastName, u.School, u.BirthDate
+                AND s.Active = 1
+            GROUP BY u.FirstName, u.LastName, u.School, u.BirthDate, u.GraduationYear
             HAVING SUM(s.AB) >= ?
         )
         SELECT 
@@ -99,7 +104,14 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
         ORDER BY GradYear, MaxExitVeloRank, AvgExitVeloRank, MaxDistanceRank, AvgDistanceRank
         """
         
+        # Debug print before executing query
+        print("Executing query...")
+        
         df = pd.read_sql(query, conn, params=(start_date, end_date, min_ab))
+        
+        # Debug print after query execution
+        print(f"Query returned {len(df)} rows")
+        
         conn.close()
         
         metrics = {
@@ -111,9 +123,9 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
         
         result = {}
         for metric_key, config in metrics.items():
-            result[metric_key] = {year: [] for year in range(2025, 2035)}  # Extended to 2034
+            result[metric_key] = {year: [] for year in range(2025, 2035)}
             
-            for year in range(2025, 2035):  # Extended to 2034
+            for year in range(2025, 2035):
                 year_df = df[df['GradYear'] == year].copy()
                 top_5 = year_df[year_df[config['rank']] <= 5].sort_values(config['rank'])
                 
@@ -135,3 +147,13 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
     except Exception as e:
         print(f"Error getting leaderboard data: {str(e)}")
         return {}
+
+if __name__ == "__main__":
+    # Add some basic testing code
+    print("Testing leaderboard data retrieval...")
+    result = get_leaderboard_data()
+    print(f"Retrieved data for {len(result)} metrics")
+    for metric, years in result.items():
+        for year, players in years.items():
+            if players:
+                print(f"{metric} - {year}: {len(players)} players")
