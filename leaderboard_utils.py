@@ -21,6 +21,7 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
                 u.School,
                 u.BirthDate,
                 CASE 
+                    WHEN u.FirstName || ' ' || u.LastName = 'Brody Armstrong' THEN 2029
                     WHEN u.GraduationYear IS NOT NULL AND u.GraduationYear != 1 THEN u.GraduationYear
                     WHEN u.FirstName || ' ' || u.LastName = 'Colton Floyd' THEN 2027
                     WHEN u.FirstName || ' ' || u.LastName = 'Maddox Gonzales' THEN 2027
@@ -63,7 +64,6 @@ def get_leaderboard_data(start_date=None, end_date=None, min_ab=50):
                     WHEN u.FirstName || ' ' || u.LastName = 'Adam Jimenez' THEN 2023
                     WHEN u.FirstName || ' ' || u.LastName = 'Jace Gabaldon' THEN 2028
                     WHEN u.FirstName || ' ' || u.LastName = 'Radley Philipbar' THEN 2028
-                    WHEN u.FirstName || ' ' || u.LastName = 'Xavier Gonzales' THEN 2028
                     WHEN strftime('%m', u.BirthDate) >= '09' 
                     THEN cast(strftime('%Y', u.BirthDate) as integer) + 18 
                     ELSE cast(strftime('%Y', u.BirthDate) as integer) + 17 

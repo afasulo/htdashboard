@@ -7,15 +7,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash import dash_table
 import pandas as pd
-from sqlite_utils import get_hittrax_data, calculate_player_stats, get_player_details
-from utils import COLUMN_FORMATS, COLUMN_GROUPS
+from db_utils import DatabaseManager, COLUMN_FORMATS, COLUMN_GROUPS  # Updated import
 from leaderboard_utils import get_leaderboard_data
 from leaderboard_layout import create_player_card
 from export_utils import create_leaderboard_pdf, create_social_media_image
 
 
 def register_hittrax_callbacks(app):
-    
     @app.callback(
         [Output('hittrax-summary-table', 'data'),
          Output('hittrax-summary-table', 'columns'),
@@ -24,61 +22,68 @@ def register_hittrax_callbacks(app):
          Output('batting-stats-radar', 'figure'),
          Output('exit-velo-boxplot', 'figure'),
          Output('hittrax-player-filter', 'options'),
-         Output('skill-level-filter', 'options')],
-        [Input('skill-level-filter', 'value'),
+         Output('grad-year-filter', 'options')],
+        [Input('grad-year-filter', 'value'),
          Input('hittrax-player-filter', 'value'),
          Input('min-ab-filter', 'value'),
          Input('column-display-selector', 'value')]
     )
-    def update_hittrax_data(selected_skills, selected_players, min_ab, selected_columns):
+    def update_hittrax_data(selected_years, selected_players, min_ab, selected_columns):
         try:
-            # Get data and calculate summaries
-            df = get_hittrax_data()
+            # Get data and calculate summaries using DatabaseManager class methods
+            df = DatabaseManager.get_hittrax_data()
             if df.empty:
                 raise ValueError("No data available in local database")
             
-            stats_df = calculate_player_stats(df, min_ab or 10)
+            # Debug prints
+            print("Initial columns:", df.columns.tolist())
+            
+            stats_df = DatabaseManager.calculate_player_stats(df, min_ab or 10)
             if stats_df.empty:
                 raise ValueError("No qualified players found")
-
+            
+            print("Stats columns:", stats_df.columns.tolist())
+            
             # Initialize display_data
             display_data = stats_df.copy()
-
+            
             # Apply filters
-            if selected_skills:
-                display_data = display_data[display_data['SkillLevel'].isin(selected_skills)]
+            if selected_years:
+                display_data = display_data[display_data['GraduationYear'].isin(selected_years)]
             if selected_players:
                 display_data = display_data[display_data['Name'].isin(selected_players)]
 
             if display_data.empty:
                 empty_fig = px.scatter(title="No data available for selected filters")
-                player_options = [{'label': name, 'value': name} for name in sorted(stats_df['Name'].unique())]
-                skill_options = [{'label': str(int(skill)), 'value': skill} 
-                               for skill in sorted(df['SkillLevel'].unique()) if pd.notna(skill)]
-                return [], [], [], empty_fig, empty_fig, empty_fig, player_options, skill_options
+                player_options = [{'label': name, 'value': name} 
+                                for name in sorted(stats_df['Name'].unique())]
+                grad_year_options = [{'label': str(int(year)), 'value': year} 
+                                   for year in sorted(stats_df['GraduationYear'].unique()) 
+                                   if pd.notna(year)]
+                return [], [], [], empty_fig, empty_fig, empty_fig, player_options, grad_year_options
 
-            # Create scatter plot using the correct column names
+            # Create scatter plot
             scatter_fig = px.scatter(
                 display_data, 
-                x='AvgExitVelMph',  # Updated column name 
-                y='MaxDistanceFeet',  # Updated column name
-                color='SkillLevel',
+                x='AvgExitVelMph',
+                y='MaxDistanceFeet',
+                color=display_data['GraduationYear'].astype(str),
                 size='AB',
                 hover_data=['Name', 'AVG', 'SLG', 'HomeRuns', 'AB', 'HitCount'],
                 text='Name',
-                title='Exit Velocity vs Distance by Skill Level'
+                title='Exit Velocity vs Distance by Graduation Year'
             )
             scatter_fig.update_traces(textposition='top center')
             
-            # Create radar chart with the correct column names
+            # Create radar chart
             radar_fig = go.Figure()
-            top_players = display_data.nlargest(5, 'AvgExitVelMph')  # Updated column name
+            top_players = display_data.nlargest(5, 'AvgExitVelMph')
             
             for _, player in top_players.iterrows():
                 radar_fig.add_trace(go.Scatterpolar(
                     r=[player['AVG'], player['SLG'], 
-                       player['AvgExitVelMph']/100,  # Updated column name 
-                       player['MaxDistanceFeet']/400,  # Updated column name
+                       player['AvgExitVelMph']/100,
+                       player['MaxDistanceFeet']/400,
                        player['HomeRuns']/10],
                     theta=['AVG', 'SLG', 'Exit Velo', 'Distance', 'HR'],
                     name=f"{player['Name']}"
@@ -90,13 +95,13 @@ def register_hittrax_callbacks(app):
                 title='Top 5 Players by Exit Velocity'
             )
             
-            # Create box plot with the correct column name
+            # Create box plot
             velo_box = px.box(
                 display_data,
-                x='SkillLevel',
-                y='MaxExitVelMph',  # Updated column name
+                x=display_data['GraduationYear'].astype(str),
+                y='MaxExitVelMph',
                 points='all',
-                title='Exit Velocity Distribution'
+                title='Exit Velocity Distribution by Graduation Year'
             )
             
             # Format columns and create tooltips for the table
@@ -121,8 +126,9 @@ def register_hittrax_callbacks(app):
             # Update filter options
             player_options = [{'label': name, 'value': name}
                             for name in sorted(stats_df['Name'].unique())]
-            skill_options = [{'label': str(int(skill)), 'value': skill}
-                           for skill in sorted(df['SkillLevel'].unique()) if pd.notna(skill)]
+            grad_year_options = [{'label': str(int(year)), 'value': year}
+                           for year in sorted(stats_df['GraduationYear'].unique()) 
+                           if pd.notna(year)]
 
             return (
                 display_data.to_dict('records'),
@@ -132,13 +138,16 @@ def register_hittrax_callbacks(app):
                 radar_fig, 
                 velo_box,
                 player_options,
-                skill_options
+                grad_year_options
             )
             
         except Exception as e:
             print(f"Error updating data: {str(e)}")
+            import traceback
+            traceback.print_exc()
             empty_fig = px.scatter(title=f"Error: {str(e)}")
             return [], [], [], empty_fig, empty_fig, empty_fig, [], []
+
     return app
 
 def register_leaderboard_callbacks(app):

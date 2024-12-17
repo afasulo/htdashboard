@@ -6,7 +6,7 @@ import os
 from layouts import create_hittrax_analysis_tab
 from callbacks import register_hittrax_callbacks, register_leaderboard_callbacks
 from leaderboard_layout import create_leaderboard_layout
-from sqlite_utils import get_hittrax_data, calculate_player_stats
+from db_utils import DatabaseManager  # Updated import
 from config import HITTRAX_CONFIG
 
 # Database verification

@@ -161,43 +161,6 @@ def create_leaderboard_layout():
         })
     ])
 
-def create_metric_section(metric_title, metric_id):
-    return html.Div([
-        html.H3(metric_title, style={
-            'fontSize': '1.5em',
-            'fontWeight': 'bold',
-            'marginBottom': '20px'
-        }),
-        
-        dcc.Tabs(
-            id=f'grad-year-tabs-{metric_id}',
-            value='2025',  # Set initial value as string
-            children=[
-                dcc.Tab(
-                    label=str(year),  # Convert year to string
-                    value=str(year),  # Convert year to string
-                    style={
-                        'padding': '10px 15px',
-                        'backgroundColor': '#f8f9fa',
-                        'borderBottom': '1px solid #dee2e6'
-                    },
-                    selected_style={
-                        'padding': '10px 15px',
-                        'backgroundColor': 'white',
-                        'borderBottom': '2px solid #2c5282',
-                        'color': '#2c5282',
-                        'fontWeight': 'bold'
-                    }
-                ) for year in range(2025, 2035)
-            ]
-        ),
-        
-        html.Div(
-            id=f'leaderboard-content-{metric_id}',
-            style={'padding': '20px 0'}
-        )
-    ])
-
     
 def create_export_buttons():
     return html.Div([

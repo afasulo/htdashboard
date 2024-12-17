@@ -1,5 +1,5 @@
 from dash import html, dcc, dash_table
-from utils import COLUMN_GROUPS
+from db_utils import COLUMN_GROUPS
 
 def create_hittrax_analysis_tab():
     return html.Div([
@@ -30,11 +30,11 @@ def create_hittrax_analysis_tab():
 def create_hittrax_filters():
     return html.Div([
         html.Div([
-            html.Label('Select Skill Level:'),
+            html.Label('Select Graduation Year:'),
             dcc.Dropdown(
-                id='skill-level-filter',
+                id='grad-year-filter',
                 multi=True,
-                placeholder="Select skill level"
+                placeholder="Select graduation year"
             )
         ], style={'width': '30%', 'display': 'inline-block', 'marginRight': '5%'}),
         
