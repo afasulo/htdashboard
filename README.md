@@ -1,6 +1,10 @@
 # HitTrax Baseball Analytics Dashboard
 
 A comprehensive baseball analytics dashboard built with Python and Dash, designed to visualize and analyze HitTrax data. The dashboard provides detailed player statistics, performance trends, and leaderboards for baseball players.
+<img width="1673" alt="image" src="https://github.com/user-attachments/assets/19409a09-aee2-499a-8ae4-a8e0b54166b2" />
+
+<img width="670" alt="image" src="https://github.com/user-attachments/assets/90f0b435-a335-4f78-9c3e-fa79396a68e5" />
+
 
 ## Future improvements/fixes
 - fix export to social media button. export to social media should copy the pdf to a sqaure nxn image
